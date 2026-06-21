@@ -7,8 +7,6 @@
  * LeetCode's GraphQL API (same origin, no CORS issue from content script).
  */
 
-console.log("[Engram] bridge loaded ✓");
-
 let capturedCode = null; // temporary store until check/ responds
 
 window.addEventListener("message", async (event) => {
@@ -35,9 +33,6 @@ window.addEventListener("message", async (event) => {
       dateSolved,
       ...problemMeta,
     };
-
-    // DEBUG — remove before production
-    console.log("[Engram] Submission captured ✓", submissionData);
 
     chrome.runtime.sendMessage({
       type: "SUBMISSION_ACCEPTED",
