@@ -57,5 +57,13 @@
     "128": "icons/icon128.png"
   },
 
-  "web_accessible_resources": []
+  "web_accessible_resources": [],
+
+  "oauth2": {
+    "client_id": "871093867219-ko05ba8qsoo5dtsohdf49dp0jeld0d09.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/calendar.events",
+      "https://www.googleapis.com/auth/calendar.readonly"
+    ]
+  }
 }
