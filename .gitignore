@@ -1,0 +1,24 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Node (for future backend)
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+
+# Extension build artifacts
+extension/dist/
+
+# Secrets — never commit these
+*.pem
+*.key
+credentials.json
+token.json

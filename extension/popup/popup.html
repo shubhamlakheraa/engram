@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Engram</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <!-- State: no pending submission -->
+    <div id="state-idle" class="state hidden">
+      <div class="logo">engram</div>
+      <p class="idle-msg">Solve a LeetCode problem to log it here.</p>
+      <a href="../options/options.html" target="_blank" class="link-btn">Settings</a>
+    </div>
+
+    <!-- State: pending submission waiting for notes -->
+    <div id="state-pending" class="state hidden">
+      <div class="logo">engram</div>
+
+      <div class="problem-badge">
+        <span id="problem-difficulty" class="badge"></span>
+        <span id="problem-title" class="problem-title"></span>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat">
+          <span class="stat-label">Runtime</span>
+          <span id="stat-runtime" class="stat-value"></span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-label">Memory</span>
+          <span id="stat-memory" class="stat-value"></span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-label">Language</span>
+          <span id="stat-lang" class="stat-value"></span>
+        </div>
+      </div>
+
+      <div class="notes-section">
+        <label for="notes-input" class="notes-label">Quick note <span class="optional">(optional)</span></label>
+        <textarea
+          id="notes-input"
+          class="notes-input"
+          placeholder="Key insight, pattern used, edge case to remember..."
+          rows="3"
+          maxlength="500"
+        ></textarea>
+      </div>
+
+      <div class="review-info">
+        <span class="calendar-icon">📅</span>
+        <span>Reviews scheduled: <strong>+1, +3, +7, +14, +30 days</strong></span>
+      </div>
+
+      <div class="actions">
+        <button id="btn-log" class="btn-primary">Log it</button>
+        <button id="btn-skip" class="btn-ghost">Skip</button>
+      </div>
+    </div>
+
+    <!-- State: logging in progress -->
+    <div id="state-logging" class="state hidden">
+      <div class="logo">engram</div>
+      <div class="spinner"></div>
+      <p class="logging-msg">Logging to Notion & scheduling reviews...</p>
+    </div>
+
+    <!-- State: success -->
+    <div id="state-success" class="state hidden">
+      <div class="logo">engram</div>
+      <div class="success-icon">✓</div>
+      <p class="success-title">Logged!</p>
+      <p class="success-sub">Notion page created · 5 calendar events added</p>
+      <button id="btn-done" class="btn-ghost">Done</button>
+    </div>
+
+    <!-- State: not configured -->
+    <div id="state-setup" class="state hidden">
+      <div class="logo">engram</div>
+      <p class="setup-msg">Connect Notion and Google Calendar to start logging.</p>
+      <a href="../options/options.html" target="_blank" class="btn-primary">Set up Engram</a>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
