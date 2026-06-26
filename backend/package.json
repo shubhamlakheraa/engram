@@ -1,0 +1,20 @@
+{
+  "name": "engram-backend",
+  "version": "0.1.0",
+  "description": "Engram backend API — spaced repetition engine and review page server",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "nanoid": "^5.0.7"
+  }
+}

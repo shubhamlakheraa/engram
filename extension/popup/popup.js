@@ -1,24 +1,26 @@
 const states = {
-  idle: document.getElementById("state-idle"),
+  idle:    document.getElementById("state-idle"),
   pending: document.getElementById("state-pending"),
   logging: document.getElementById("state-logging"),
   success: document.getElementById("state-success"),
-  setup: document.getElementById("state-setup"),
+  setup:   document.getElementById("state-setup"),
+  auth:    document.getElementById("state-auth"),
+  error:   document.getElementById("state-error"),
 };
 
 function showState(name) {
-  Object.values(states).forEach((el) => el.classList.add("hidden"));
+  Object.values(states).forEach((el) => el?.classList.add("hidden"));
   states[name]?.classList.remove("hidden");
 }
 
 async function init() {
-  const [settings, pending] = await Promise.all([getSettings(), getPending()]);
-
-  if (!settings?.notionApiKey || !settings?.notionDatabaseId) {
-    showState("setup");
+  const { engramToken } = await chrome.storage.local.get("engramToken");
+  if (!engramToken) {
+    showState("auth");
     return;
   }
 
+  const pending = await getPending();
   if (!pending) {
     showState("idle");
     return;
@@ -29,11 +31,11 @@ async function init() {
 }
 
 function populatePendingUI(submission) {
-  const titleEl = document.getElementById("problem-title");
-  const badgeEl = document.getElementById("problem-difficulty");
+  const titleEl   = document.getElementById("problem-title");
+  const badgeEl   = document.getElementById("problem-difficulty");
   const runtimeEl = document.getElementById("stat-runtime");
-  const memoryEl = document.getElementById("stat-memory");
-  const langEl = document.getElementById("stat-lang");
+  const memoryEl  = document.getElementById("stat-memory");
+  const langEl    = document.getElementById("stat-lang");
 
   const title = submission.problemNumber
     ? `${submission.problemNumber}. ${submission.problemTitle || submission.titleSlug}`
@@ -46,12 +48,12 @@ function populatePendingUI(submission) {
   badgeEl.className = `badge ${diff}`;
 
   runtimeEl.textContent = submission.statusRuntime || "—";
-  memoryEl.textContent = submission.statusMemory || "—";
-  langEl.textContent = submission.prettyLang || submission.lang || "—";
+  memoryEl.textContent  = submission.statusMemory  || "—";
+  langEl.textContent    = submission.prettyLang || submission.lang || "—";
 }
 
 document.getElementById("btn-log").addEventListener("click", async () => {
-  const notes = document.getElementById("notes-input").value.trim();
+  const notes   = document.getElementById("notes-input").value.trim();
   const pending = await getPending();
   if (!pending) return;
 
@@ -59,8 +61,14 @@ document.getElementById("btn-log").addEventListener("click", async () => {
 
   chrome.runtime.sendMessage(
     { type: "LOG_SUBMISSION", data: { ...pending, notes } },
-    () => {
-      showState("success");
+    (result) => {
+      if (result?.ok) {
+        showState("success");
+      } else {
+        document.getElementById("error-msg").textContent =
+          result?.error || "Something went wrong.";
+        showState("error");
+      }
     }
   );
 });
@@ -70,17 +78,9 @@ document.getElementById("btn-skip").addEventListener("click", async () => {
   showState("idle");
 });
 
-document.getElementById("btn-done").addEventListener("click", () => {
-  window.close();
-});
+document.getElementById("btn-done").addEventListener("click", () => window.close());
 
-function getSettings() {
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ type: "GET_SETTINGS" }, (res) => {
-      resolve(res?.data || null);
-    });
-  });
-}
+document.getElementById("btn-error-ok").addEventListener("click", () => showState("pending"));
 
 function getPending() {
   return new Promise((resolve) => {
