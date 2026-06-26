@@ -85,6 +85,21 @@
       <a href="../options/options.html" target="_blank" class="btn-primary">Set up Engram</a>
     </div>
 
+    <!-- State: not logged in -->
+    <div id="state-auth" class="state hidden">
+      <div class="logo">engram</div>
+      <p class="setup-msg">Sign in to start logging your solutions.</p>
+      <a href="../options/options.html" target="_blank" class="btn-primary">Sign in</a>
+    </div>
+
+    <!-- State: error -->
+    <div id="state-error" class="state hidden">
+      <div class="logo">engram</div>
+      <p class="success-title" style="color:#ef4444">Error</p>
+      <p id="error-msg" class="success-sub"></p>
+      <button id="btn-error-ok" class="btn-ghost">OK</button>
+    </div>
+
     <script src="popup.js"></script>
   </body>
 </html>

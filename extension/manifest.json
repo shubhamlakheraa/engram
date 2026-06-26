@@ -14,7 +14,8 @@
   "host_permissions": [
     "https://leetcode.com/*",
     "https://api.notion.com/*",
-    "https://www.googleapis.com/*"
+    "https://www.googleapis.com/*",
+    "http://localhost:3000/*"
   ],
 
   "background": {

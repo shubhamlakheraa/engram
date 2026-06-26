@@ -1,16 +1,10 @@
-/**
- * Background service worker — the brain of Engram.
- *
- * Responsibilities:
- *  1. Receive SUBMISSION_ACCEPTED from bridge.js
- *  2. Store submission in chrome.storage temporarily (survives SW sleep)
- *  3. Show a notification so the user knows something was captured
- *  4. On popup "Log It" confirmation: create Notion page + Google Calendar events
- */
+const BACKEND_URL = "http://localhost:3000";
 
-import { createNotionPage } from "./notion.js";
-import { scheduleCalendarEvents } from "./calendar.js";
-import { computeInitialIntervals } from "./spaced-repetition.js";
+chrome.runtime.onInstalled.addListener(({ reason }) => {
+  if (reason === "install") {
+    chrome.tabs.create({ url: chrome.runtime.getURL("../options/options.html") });
+  }
+});
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === "SUBMISSION_ACCEPTED") {
@@ -19,15 +13,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   if (message.type === "LOG_SUBMISSION") {
-    logSubmission(message.data);
-    sendResponse({ ok: true });
+    logSubmission(message.data).then((result) => sendResponse(result));
+    return true;
   }
 
   if (message.type === "GET_PENDING") {
     chrome.storage.local.get("pendingSubmission", (result) => {
       sendResponse({ data: result.pendingSubmission || null });
     });
-    return true; // keep channel open for async sendResponse
+    return true;
   }
 
   if (message.type === "CLEAR_PENDING") {
@@ -44,54 +38,40 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 });
 
 async function handleSubmission(data) {
-  // Save to storage — popup will read this when it opens
   await chrome.storage.local.set({ pendingSubmission: data });
 
-  // Show a browser notification
   chrome.notifications.create("engram-submission", {
-    type: "basic",
-    iconUrl: "../icons/icon48.png",
-    title: `Engram: ${data.problemTitle || data.titleSlug} solved!`,
-    message: `${data.statusRuntime} · ${data.statusMemory} — Click the Engram icon to add a note.`,
+    type:     "basic",
+    iconUrl:  "../icons/icon48.png",
+    title:    `Engram: ${data.problemTitle || data.titleSlug} solved!`,
+    message:  `${data.statusRuntime} · ${data.statusMemory} — Click the Engram icon to add a note.`,
     priority: 2,
   });
 }
 
 async function logSubmission(data) {
-  const settings = await getSettings();
+  const { engramToken } = await chrome.storage.local.get("engramToken");
 
-  if (!settings?.notionApiKey || !settings?.notionDatabaseId) {
-    console.error("Engram: Notion not configured. Open options to set up.");
-    return;
+  if (!engramToken) {
+    return { ok: false, error: "Not logged in. Open Engram options to sign in." };
   }
-
-  const reviewDates = computeInitialIntervals(new Date(data.dateSolved));
 
   try {
-    await createNotionPage(settings.notionApiKey, settings.notionDatabaseId, {
-      ...data,
-      reviewDates,
-      nextReviewDate: reviewDates[0],
+    const res = await fetch(`${BACKEND_URL}/api/submissions`, {
+      method:  "POST",
+      headers: {
+        "Content-Type":  "application/json",
+        "Authorization": `Bearer ${engramToken}`,
+      },
+      body: JSON.stringify(data),
     });
+
+    const json = await res.json();
+    if (!res.ok) return { ok: false, error: json.error || "Submission failed." };
+
+    await chrome.storage.local.remove("pendingSubmission");
+    return { ok: true };
   } catch (err) {
-    console.error("Engram: Failed to create Notion page", err);
+    return { ok: false, error: err.message };
   }
-
-  if (settings?.calendarEnabled && settings?.calendarId) {
-    try {
-      await scheduleCalendarEvents(settings.calendarId, data, reviewDates);
-    } catch (err) {
-      console.error("Engram: Failed to schedule calendar events", err);
-    }
-  }
-
-  await chrome.storage.local.remove("pendingSubmission");
-}
-
-function getSettings() {
-  return new Promise((resolve) => {
-    chrome.storage.local.get("engramSettings", (result) => {
-      resolve(result.engramSettings || null);
-    });
-  });
 }

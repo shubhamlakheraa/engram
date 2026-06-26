@@ -1,0 +1,13 @@
+{
+  "titleSlug": "two-sum",
+  "problemNumber": "1",
+  "problemTitle": "Two Sum",
+  "difficulty": "Easy",
+  "topics": ["Array", "Hash Table"],
+  "lang": "python3",
+  "code": "class Solution:\n    def twoSum(self, nums, target):\n        seen = {}\n        for i, n in enumerate(nums):\n            if target - n in seen:\n                return [seen[target-n], i]\n            seen[n] = i",
+  "statusRuntime": "0 ms",
+  "statusMemory": "16.4 MB",
+  "runtimePercentile": 100,
+  "memoryPercentile": 82
+}
