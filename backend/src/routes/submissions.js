@@ -4,7 +4,7 @@ import supabase from "../db/client.js";
 import { requireAuth } from "../middleware/auth.js";
 import { createProblemPage } from "../services/notion.js";
 import { createReviewEvent, refreshAccessToken } from "../services/calendar.js";
-import { getInitialReviewDates } from "../services/sr.js";
+import { INITIAL_STABILITY, INITIAL_DIFFICULTY } from "../services/sr.js";
 
 const router = express.Router();
 
@@ -21,7 +21,6 @@ router.post("/", requireAuth, async (req, res) => {
     return res.status(400).json({ error: "titleSlug required" });
   }
 
-  // Load user integrations
   const { data: integration } = await supabase
     .from("user_integrations")
     .select("*")
@@ -32,8 +31,9 @@ router.post("/", requireAuth, async (req, res) => {
     return res.status(400).json({ error: "Notion not configured" });
   }
 
-  const reviewDates = getInitialReviewDates(dateSolved ? new Date(dateSolved) : new Date());
-  const firstReviewDate = reviewDates[0];
+  const solvedDate = dateSolved ? new Date(dateSolved) : new Date();
+  const firstReviewDate = new Date(solvedDate);
+  firstReviewDate.setDate(firstReviewDate.getDate() + 1);
 
   // ── Create Notion page ────────────────────────────────────────────────────
 
@@ -47,7 +47,7 @@ router.post("/", requireAuth, async (req, res) => {
         problemUrl, lang, prettyLang,
         runtime: statusRuntime, memory: statusMemory,
         runtimePercentile, memoryPercentile,
-        code, notes, dateSolved,
+        code, notes, dateSolved: solvedDate.toISOString(),
         nextReviewDate: firstReviewDate,
       },
       [firstReviewDate]
@@ -57,100 +57,103 @@ router.post("/", requireAuth, async (req, res) => {
     console.error("Notion page creation failed:", err.message);
   }
 
-  // ── Save problem to DB ────────────────────────────────────────────────────
+  // ── Save problem ──────────────────────────────────────────────────────────
 
   const { data: problem, error: problemError } = await supabase
     .from("problems")
     .insert({
-      user_id:            req.userId,
-      problem_number:     problemNumber,
-      problem_title:      problemTitle || titleSlug,
-      title_slug:         titleSlug,
+      user_id:             req.userId,
+      problem_number:      problemNumber,
+      problem_title:       problemTitle || titleSlug,
+      title_slug:          titleSlug,
       difficulty,
-      topics:             topics || [],
-      problem_url:        problemUrl,
+      topics:              topics || [],
+      problem_url:         problemUrl,
       lang,
       code,
-      runtime:            statusRuntime,
-      memory:             statusMemory,
-      runtime_percentile: runtimePercentile,
-      memory_percentile:  memoryPercentile,
-      date_solved:        dateSolved || new Date().toISOString(),
-      notion_page_id:     notionPageId,
-      next_review_date:   firstReviewDate.toISOString().split("T")[0],
+      notes:               notes || null,
+      runtime:             statusRuntime,
+      memory:              statusMemory,
+      runtime_percentile:  runtimePercentile,
+      memory_percentile:   memoryPercentile,
+      date_solved:         solvedDate.toISOString(),
+      notion_page_id:      notionPageId,
+      next_review_date:    firstReviewDate.toISOString().split("T")[0],
+      last_review_date:    solvedDate.toISOString().split("T")[0],
+      stability:           INITIAL_STABILITY,
+      memory_difficulty:   INITIAL_DIFFICULTY,
     })
     .select("id")
     .single();
 
   if (problemError) {
+    console.error("Problem insert failed:", problemError);
     return res.status(500).json({ error: "Failed to save problem" });
   }
 
-  // ── Create first review record + Calendar event (SM-2 handles the rest) ────
+  // ── Create first review record + Calendar event ───────────────────────────
+
+  const reviewToken = nanoid(12);
+  const reviewUrl   = `${process.env.APP_URL}/review/${reviewToken}`;
+
+  const { data: review } = await supabase
+    .from("reviews")
+    .insert({
+      problem_id:     problem.id,
+      user_id:        req.userId,
+      review_number:  1,
+      scheduled_date: firstReviewDate.toISOString().split("T")[0],
+      review_token:   reviewToken,
+    })
+    .select("id")
+    .single();
 
   let accessToken = integration.google_access_token;
 
-  {
-    const i = 0;
-    const reviewToken = nanoid(12);
-    const reviewUrl = `${process.env.APP_URL}/review/${reviewToken}`;
+  if (accessToken && integration.calendar_id) {
+    try {
+      const event = await createReviewEvent(
+        accessToken,
+        integration.calendar_id,
+        { problemNumber, problemTitle, titleSlug, difficulty, problemUrl },
+        firstReviewDate,
+        reviewUrl,
+        1
+      );
 
-    const { data: review } = await supabase
-      .from("reviews")
-      .insert({
-        problem_id:     problem.id,
-        user_id:        req.userId,
-        review_number:  1,
-        scheduled_date: reviewDates[i].toISOString().split("T")[0],
-        review_token:   reviewToken,
-      })
-      .select("id")
-      .single();
+      await supabase
+        .from("reviews")
+        .update({ calendar_event_id: event.id })
+        .eq("id", review.id);
 
-    if (accessToken && integration.calendar_id) {
-      try {
-        const event = await createReviewEvent(
-          accessToken,
-          integration.calendar_id,
-          { problemNumber, problemTitle, titleSlug, difficulty, problemUrl },
-          firstReviewDate,
-          reviewUrl,
-          1
-        );
+    } catch (err) {
+      if (err.message.includes("401") && integration.google_refresh_token) {
+        try {
+          accessToken = await refreshAccessToken(integration.google_refresh_token);
+          await supabase
+            .from("user_integrations")
+            .update({ google_access_token: accessToken })
+            .eq("user_id", req.userId);
 
-        await supabase
-          .from("reviews")
-          .update({ calendar_event_id: event.id })
-          .eq("id", review.id);
+          const event = await createReviewEvent(
+            accessToken,
+            integration.calendar_id,
+            { problemNumber, problemTitle, titleSlug, difficulty, problemUrl },
+            firstReviewDate,
+            reviewUrl,
+            1
+          );
 
-      } catch (err) {
-        // Token might be expired — try refreshing once
-        if (err.message.includes("401") && integration.google_refresh_token) {
-          try {
-            accessToken = await refreshAccessToken(integration.google_refresh_token);
-            await supabase
-              .from("user_integrations")
-              .update({ google_access_token: accessToken })
-              .eq("user_id", req.userId);
+          await supabase
+            .from("reviews")
+            .update({ calendar_event_id: event.id })
+            .eq("id", review.id);
 
-            const event = await createReviewEvent(
-              accessToken,
-              integration.calendar_id,
-              { problemNumber, problemTitle, titleSlug, difficulty, problemUrl },
-              firstReviewDate,
-              reviewUrl,
-              1
-            );
-
-            await supabase
-              .from("reviews")
-              .update({ calendar_event_id: event.id })
-              .eq("id", review.id);
-
-          } catch (refreshErr) {
-            console.error("Calendar event failed after token refresh:", refreshErr.message);
-          }
+        } catch (refreshErr) {
+          console.error("Calendar event failed after token refresh:", refreshErr.message);
         }
+      } else {
+        console.error("Calendar event failed:", err.message);
       }
     }
   }
