@@ -37,7 +37,7 @@ export async function createProblemPage(token, databaseId, problem, reviewDates)
       "Date Solved":  { date: { start: dateSolved ? dateSolved.split("T")[0] : new Date().toISOString().split("T")[0] } },
       "Next Review":  { date: nextReviewDate ? { start: new Date(nextReviewDate).toISOString().split("T")[0] } : null },
       "Review Count": { number: 0 },
-      "Ease Factor":  { number: 2.5 },
+      "Ease Factor":  { number: 1.0 },
       Status:         { select: { name: "Solved" } },
     },
     children: buildPageBlocks(code, notes, reviewDates),
@@ -57,12 +57,12 @@ export async function createProblemPage(token, databaseId, problem, reviewDates)
   return res.json();
 }
 
-export async function updateReviewState(token, pageId, { nextReviewDate, reviewCount, easeFactor }) {
+export async function updateReviewState(token, pageId, { nextReviewDate, reviewCount, stability }) {
   const body = {
     properties: {
       "Next Review":  { date: { start: new Date(nextReviewDate).toISOString().split("T")[0] } },
       "Review Count": { number: reviewCount },
-      "Ease Factor":  { number: easeFactor },
+      "Ease Factor":  { number: parseFloat(stability.toFixed(2)) },
     },
   };
 
@@ -121,7 +121,7 @@ export async function createDatabase(token, parentPageId = null) {
         "Date Solved":  { date: {} },
         "Next Review":  { date: {} },
         "Review Count": { number: { format: "number" } },
-        "Ease Factor":  { number: { format: "number" } },
+        "Stability":    { number: { format: "number" } },
         Status:         { select: { options: [{ name: "Solved", color: "green" }, { name: "Reviewing", color: "blue" }] } },
       },
     }),
