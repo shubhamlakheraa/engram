@@ -1,6 +1,20 @@
 const CALENDAR_API = "https://www.googleapis.com/calendar/v3";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 
+async function getCalendarTimezone(accessToken, calendarId) {
+  try {
+    const res = await fetch(
+      `${CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!res.ok) return "UTC";
+    const data = await res.json();
+    return data.timeZone || "UTC";
+  } catch (_) {
+    return "UTC";
+  }
+}
+
 export async function createReviewEvent(accessToken, calendarId, problem, reviewDate, reviewUrl, reviewNum) {
   const { problemNumber, problemTitle, titleSlug, difficulty } = problem;
 
@@ -10,15 +24,19 @@ export async function createReviewEvent(accessToken, calendarId, problem, review
 
   const emoji = difficulty === "Easy" ? "🟢" : difficulty === "Hard" ? "🔴" : "🟡";
   const dateStr = new Date(reviewDate).toISOString().split("T")[0];
+  const timeZone = await getCalendarTimezone(accessToken, calendarId);
 
   const event = {
     summary: `${emoji} Engram Review #${reviewNum}: ${label}`,
     description: `Time to review your solution!\n\n👉 ${reviewUrl}\n\nLeetCode: ${problem.problemUrl || ""}`,
-    start: { date: dateStr },
-    end:   { date: dateStr },
+    start: { dateTime: `${dateStr}T09:00:00`, timeZone },
+    end:   { dateTime: `${dateStr}T09:30:00`, timeZone },
     reminders: {
       useDefault: false,
-      overrides: [{ method: "popup", minutes: 0 }],
+      overrides: [
+        { method: "popup", minutes: 0 },    // notification at 9 AM on review day
+        { method: "email", minutes: 1440 }, // email the day before
+      ],
     },
     colorId: "5",
   };
