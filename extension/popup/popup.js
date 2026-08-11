@@ -63,6 +63,14 @@ document.getElementById("btn-log").addEventListener("click", async () => {
     { type: "LOG_SUBMISSION", data: { ...pending, notes } },
     (result) => {
       if (result?.ok) {
+        const subEl = document.getElementById("success-sub");
+        if (result.notionSynced === false) {
+          subEl.textContent = "Saved · Notion sync failed — reconnect in Settings";
+          subEl.style.color = "#f59e0b";
+        } else {
+          subEl.textContent = "Saved to Notion · First review scheduled for tomorrow";
+          subEl.style.color = "";
+        }
         showState("success");
       } else {
         document.getElementById("error-msg").textContent =

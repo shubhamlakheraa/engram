@@ -37,7 +37,7 @@ export async function createProblemPage(token, databaseId, problem, reviewDates)
       "Date Solved":  { date: { start: dateSolved ? dateSolved.split("T")[0] : new Date().toISOString().split("T")[0] } },
       "Next Review":  { date: nextReviewDate ? { start: new Date(nextReviewDate).toISOString().split("T")[0] } : null },
       "Review Count": { number: 0 },
-      "Ease Factor":  { number: 1.0 },
+      "Stability":    { number: 1.0 },
       Status:         { select: { name: "Solved" } },
     },
     children: buildPageBlocks(code, notes, reviewDates),
@@ -62,7 +62,7 @@ export async function updateReviewState(token, pageId, { nextReviewDate, reviewC
     properties: {
       "Next Review":  { date: { start: new Date(nextReviewDate).toISOString().split("T")[0] } },
       "Review Count": { number: reviewCount },
-      "Ease Factor":  { number: parseFloat(stability.toFixed(2)) },
+      "Stability":    { number: parseFloat(stability.toFixed(2)) },
     },
   };
 

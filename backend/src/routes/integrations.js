@@ -58,16 +58,45 @@ router.get("/notion/callback", async (req, res) => {
   const { access_token, workspace_name } = await tokenRes.json();
 
   const { createDatabase } = await import("../services/notion.js");
+
+  // Check if the user already has a database — reuse it if still accessible.
+  const { data: existing } = await supabase
+    .from("user_integrations")
+    .select("notion_database_id")
+    .eq("user_id", userId)
+    .single();
+
   let databaseId = null;
-  try {
-    databaseId = await createDatabase(access_token);
-  } catch (err) {
-    console.error("Auto-create Notion DB failed:", err.message);
-    return res.send(renderPage(
-      "One more step",
-      "Engram couldn't create a database — you may not have selected any pages. Please go back to the extension, click Disconnect, then Connect Notion again and select at least one page (or choose All).",
-      false
-    ));
+
+  if (existing?.notion_database_id) {
+    try {
+      const check = await fetch(
+        `https://api.notion.com/v1/databases/${existing.notion_database_id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+            "Notion-Version": "2022-06-28",
+          },
+        }
+      );
+      if (check.ok) {
+        databaseId = existing.notion_database_id;
+        console.log("Reusing existing Notion database:", databaseId);
+      }
+    } catch (_) {}
+  }
+
+  if (!databaseId) {
+    try {
+      databaseId = await createDatabase(access_token);
+    } catch (err) {
+      console.error("Auto-create Notion DB failed:", err.message);
+      return res.send(renderPage(
+        "One more step",
+        "Engram couldn't create a database — you may not have selected any pages. Please go back to the extension, click Disconnect, then Connect Notion again and select at least one page (or choose All).",
+        false
+      ));
+    }
   }
 
   await supabase.from("user_integrations").upsert(
@@ -80,9 +109,12 @@ router.get("/notion/callback", async (req, res) => {
     { onConflict: "user_id" }
   );
 
+  const isNew = !existing?.notion_database_id || existing.notion_database_id !== databaseId;
   res.send(renderPage(
     "Notion connected!",
-    `Your Engram database has been created in "${workspace_name || "your workspace"}". You can close this tab.`,
+    isNew
+      ? `Your Engram database has been created in "${workspace_name || "your workspace"}". You can close this tab.`
+      : `Reconnected to your existing Engram database in "${workspace_name || "your workspace"}". You can close this tab.`,
     true
   ));
 });

@@ -70,7 +70,11 @@ async function logSubmission(data) {
     if (!res.ok) return { ok: false, error: json.error || "Submission failed." };
 
     await chrome.storage.local.remove("pendingSubmission");
-    return { ok: true };
+    return {
+      ok:           true,
+      notionSynced: json.notionSynced,
+      notionError:  json.notionError || null,
+    };
   } catch (err) {
     return { ok: false, error: err.message };
   }
