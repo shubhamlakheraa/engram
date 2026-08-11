@@ -38,6 +38,7 @@ router.post("/", requireAuth, async (req, res) => {
   // ── Create Notion page ────────────────────────────────────────────────────
 
   let notionPageId = null;
+  let notionError  = null;
   try {
     const page = await createProblemPage(
       integration.notion_token,
@@ -54,6 +55,7 @@ router.post("/", requireAuth, async (req, res) => {
     );
     notionPageId = page.id;
   } catch (err) {
+    notionError = err.message;
     console.error("Notion page creation failed:", err.message);
   }
 
@@ -158,7 +160,12 @@ router.post("/", requireAuth, async (req, res) => {
     }
   }
 
-  res.status(201).json({ ok: true, problemId: problem.id, notionPageId });
+  res.status(201).json({
+    ok:           true,
+    problemId:    problem.id,
+    notionSynced: notionPageId !== null,
+    notionError:  notionError,
+  });
 });
 
 export default router;
