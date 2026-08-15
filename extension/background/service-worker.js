@@ -1,4 +1,4 @@
-const BACKEND_URL = "http://localhost:3000";
+const BACKEND_URL = "https://engram-ijh1.onrender.com";
 
 chrome.runtime.onInstalled.addListener(({ reason }) => {
   if (reason === "install") {

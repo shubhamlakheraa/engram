@@ -15,7 +15,8 @@
     "https://leetcode.com/*",
     "https://api.notion.com/*",
     "https://www.googleapis.com/*",
-    "http://localhost:3000/*"
+    "http://localhost:3000/*",
+    "https://engram-ijh1.onrender.com/*"
   ],
 
   "background": {
