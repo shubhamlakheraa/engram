@@ -16,6 +16,87 @@ app.use(express.json());
 // Health check
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
+// Homepage
+app.get("/", (_req, res) => {
+  res.setHeader("Content-Type", "text/html");
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Engram — Spaced Repetition for LeetCode</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f0f0f; color: #f0f0f0;
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px 20px;
+    }
+    .logo { font-size: 48px; margin-bottom: 16px; }
+    h1 { font-size: 36px; font-weight: 700; margin-bottom: 12px; }
+    .tagline { font-size: 18px; color: #aaa; max-width: 480px; text-align: center; line-height: 1.6; margin-bottom: 40px; }
+    .features {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px; max-width: 680px; width: 100%; margin-bottom: 48px;
+    }
+    .feature {
+      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px;
+      padding: 20px;
+    }
+    .feature-icon { font-size: 24px; margin-bottom: 10px; }
+    .feature h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .feature p { font-size: 13px; color: #888; line-height: 1.5; }
+    .cta {
+      display: inline-block; background: #7c6af7; color: #fff;
+      text-decoration: none; padding: 14px 32px; border-radius: 8px;
+      font-weight: 600; font-size: 16px; margin-bottom: 48px;
+    }
+    footer { color: #555; font-size: 13px; }
+    footer a { color: #7c6af7; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="logo">🧠</div>
+  <h1>Engram</h1>
+  <p class="tagline">
+    A Chrome extension that automatically logs your LeetCode solutions and schedules spaced repetition reviews so you actually remember what you solve.
+  </p>
+
+  <div class="features">
+    <div class="feature">
+      <div class="feature-icon">⚡</div>
+      <h3>Auto-capture</h3>
+      <p>Detects accepted submissions on LeetCode and logs them instantly — no copy-paste needed.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔁</div>
+      <h3>FSRS scheduling</h3>
+      <p>Uses the FSRS-4.5 algorithm to schedule reviews at the optimal moment before you forget.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📓</div>
+      <h3>Notion sync</h3>
+      <p>Optionally syncs every problem to a Notion database so your solutions are searchable.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📅</div>
+      <h3>Google Calendar</h3>
+      <p>Optionally creates a timed Google Calendar event for each review so it shows up in your day.</p>
+    </div>
+  </div>
+
+  <a class="cta" href="https://chromewebstore.google.com/detail/engram" target="_blank">Add to Chrome</a>
+
+  <footer>
+    <a href="/privacy">Privacy Policy</a> &nbsp;·&nbsp;
+    Contact: <a href="mailto:lakherashubham.dev@gmail.com">lakherashubham.dev@gmail.com</a>
+  </footer>
+</body>
+</html>`);
+});
+
 // Privacy policy
 app.get("/privacy", (_req, res) => {
   res.setHeader("Content-Type", "text/html");
