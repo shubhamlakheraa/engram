@@ -34,8 +34,8 @@ export async function createReviewEvent(accessToken, calendarId, problem, review
     reminders: {
       useDefault: false,
       overrides: [
-        { method: "popup", minutes: 0 },    // notification at 9 AM on review day
-        { method: "email", minutes: 1440 }, // email the day before
+        { method: "popup", minutes: 0 },   // notification at 9 AM on review day
+        { method: "email", minutes: 120 }, // email 2 hours before as backup
       ],
     },
     colorId: "5",
