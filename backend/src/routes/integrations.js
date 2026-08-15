@@ -59,33 +59,60 @@ router.get("/notion/callback", async (req, res) => {
 
   const { createDatabase } = await import("../services/notion.js");
 
-  // Check if the user already has a database — reuse it if still accessible.
   const { data: existing } = await supabase
     .from("user_integrations")
     .select("notion_database_id")
     .eq("user_id", userId)
     .single();
 
+  const NOTION_HEADERS = {
+    Authorization: `Bearer ${access_token}`,
+    "Content-Type": "application/json",
+    "Notion-Version": "2022-06-28",
+  };
+
   let databaseId = null;
 
+  // 1. Try Supabase-stored ID first (fastest path)
   if (existing?.notion_database_id) {
     try {
       const check = await fetch(
         `https://api.notion.com/v1/databases/${existing.notion_database_id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-            "Notion-Version": "2022-06-28",
-          },
-        }
+        { headers: NOTION_HEADERS }
       );
       if (check.ok) {
         databaseId = existing.notion_database_id;
-        console.log("Reusing existing Notion database:", databaseId);
+        console.log("Reusing Notion database from Supabase:", databaseId);
       }
     } catch (_) {}
   }
 
+  // 2. Search workspace for existing "Engram — LeetCode Tracker" database
+  //    (handles token rotation where stored ID is inaccessible with new token)
+  if (!databaseId) {
+    try {
+      const searchRes = await fetch("https://api.notion.com/v1/search", {
+        method: "POST",
+        headers: NOTION_HEADERS,
+        body: JSON.stringify({
+          query: "Engram — LeetCode Tracker",
+          filter: { property: "object", value: "database" },
+        }),
+      });
+      if (searchRes.ok) {
+        const { results } = await searchRes.json();
+        const found = results?.find(
+          (r) => r.title?.[0]?.plain_text === "Engram — LeetCode Tracker"
+        );
+        if (found) {
+          databaseId = found.id;
+          console.log("Found existing Notion database via search:", databaseId);
+        }
+      }
+    } catch (_) {}
+  }
+
+  // 3. Nothing found — create a fresh database
   if (!databaseId) {
     try {
       databaseId = await createDatabase(access_token);
