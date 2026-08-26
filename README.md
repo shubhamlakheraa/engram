@@ -1,10 +1,14 @@
 # Engram
 
+![Engram](assets/poster1.png)
+
 Automatic spaced repetition for LeetCode. Solve once, remember forever.
 
 Engram is a Chrome extension + Node.js backend that captures every accepted LeetCode submission and schedules memory reviews using the FSRS-4.5 algorithm — the most accurate open-source spaced repetition system available. Reviews are retrieval-based: the solution is hidden until you attempt recall, so each session actually strengthens memory instead of just recognizing a familiar answer.
 
 ---
+
+![Auto capture](assets/poster2.png)
 
 ## How it works — end to end
 
@@ -214,6 +218,8 @@ Every new problem starts at `S = 1.0` (review in 1 day) and `D = 7.2102` (mean d
 
 ---
 
+![Review page](assets/poster3.png)
+
 ### Notion integration
 
 On first connect, Engram creates a single database in the user's Notion workspace called "Engram — LeetCode Tracker" with columns for problem metadata, code, notes, stability, next review date, and review count.
@@ -225,6 +231,8 @@ On reconnect (token rotation), the backend runs a three-step lookup to avoid cre
 
 ---
 
+![Notion and Calendar](assets/poster4.png)
+
 ### Google Calendar integration
 
 Review events are created as timed events (9:00–9:30 AM) using the user's calendar timezone, fetched via `GET /calendars/{id}`. Reminders:
@@ -234,6 +242,8 @@ Review events are created as timed events (9:00–9:30 AM) using the user's cale
 Google tokens are refreshed automatically on 401 errors using the stored `refresh_token`.
 
 ---
+
+![FSRS scheduling](assets/poster5.png)
 
 ## Tech stack
 
