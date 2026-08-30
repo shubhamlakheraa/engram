@@ -139,7 +139,14 @@ router.post("/:token/complete", async (req, res) => {
     const scheduleEvent = async (token) => {
       const event = await createReviewEvent(
         token, integration.calendar_id,
-        problem, nextReviewDate, reviewUrl, review.review_number + 1
+        {
+          problemNumber: problem.problem_number,
+          problemTitle:  problem.problem_title,
+          titleSlug:     problem.title_slug,
+          difficulty:    problem.difficulty,
+          problemUrl:    problem.problem_url,
+        },
+        nextReviewDate, reviewUrl, review.review_number + 1
       );
       await supabase
         .from("reviews")
