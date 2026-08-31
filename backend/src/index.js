@@ -88,7 +88,7 @@ app.get("/", (_req, res) => {
     </div>
   </div>
 
-  <a class="cta" href="https://chromewebstore.google.com/detail/engram" target="_blank">Add to Chrome</a>
+  <a class="cta" href="https://chromewebstore.google.com/detail/mihmkodepgcfenaelhcinenegcnghmin" target="_blank">Add to Chrome</a>
 
   <footer>
     <a href="/privacy">Privacy Policy</a> &nbsp;·&nbsp;
