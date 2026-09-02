@@ -121,7 +121,7 @@ app.get("/privacy", (_req, res) => {
 </head>
 <body>
   <h1>Privacy Policy — Engram</h1>
-  <p class="meta">Last updated: 2026-08-15</p>
+  <p class="meta">Last updated: 2026-09-02</p>
 
   <p>Engram is a Chrome extension that automatically logs your LeetCode solutions and schedules spaced repetition reviews using the FSRS algorithm.</p>
 
@@ -132,13 +132,21 @@ app.get("/privacy", (_req, res) => {
     <li><strong>LeetCode submission data</strong> — problem title, number, difficulty, topics, your solution code, runtime, memory usage, and the date you solved it</li>
     <li><strong>Notes</strong> — the optional quick note you add when logging a problem</li>
   </ul>
-  <p>This data is transmitted to Engram's backend server and stored in a private Supabase database accessible only to your account.</p>
+  <p>This data is transmitted to Engram's backend server over HTTPS and stored in a private Supabase (PostgreSQL) database accessible only to your account.</p>
+
+  <h2>Google user data</h2>
+  <p>When you connect Google Calendar, Engram requests two scopes:</p>
+  <ul>
+    <li><strong>calendar.events</strong> — used exclusively to create and delete Google Calendar events for scheduled spaced repetition reviews. Each event contains the problem name, review date, and a link to your review page. No existing calendar events are read, modified, or accessed.</li>
+    <li><strong>calendar.readonly</strong> — used exclusively to read your calendar's timezone setting so review events are created at 9:00 AM in your local timezone rather than UTC. No calendar event data, titles, descriptions, or attendees are read or stored.</li>
+  </ul>
+  <p>Google user data is used only to provide the Calendar reminder feature. It is never shared with third parties, never used for advertising, and never transferred for purposes unrelated to this feature. OAuth tokens are stored encrypted at rest in Supabase and transmitted only over HTTPS. You can revoke access at any time from the Engram Settings page or from your Google Account permissions page.</p>
 
   <h2>What Engram shares with third parties</h2>
   <p>Engram integrates with two optional third-party services, both requiring your explicit authorization:</p>
   <ul>
     <li><strong>Notion</strong> — if you connect your Notion account, Engram creates a database page for each problem you log. This sends your submission data to Notion's servers. You can disconnect at any time from the Settings page.</li>
-    <li><strong>Google Calendar</strong> — if you connect your Google account, Engram creates calendar events for scheduled reviews. This sends problem titles and review dates to Google's servers. You can disconnect at any time from the Settings page.</li>
+    <li><strong>Google Calendar</strong> — if you connect your Google account, Engram creates calendar events for scheduled reviews as described above. You can disconnect at any time from the Settings page.</li>
   </ul>
   <p>Neither integration is required. If you don't connect them, no data is sent to Notion or Google.</p>
 
@@ -150,20 +158,28 @@ app.get("/privacy", (_req, res) => {
     <li>No data from any website other than LeetCode submission results</li>
   </ul>
 
+  <h2>Data protection</h2>
+  <ul>
+    <li>All data is transmitted over HTTPS/TLS — never over plain HTTP</li>
+    <li>Data at rest is stored in Supabase (PostgreSQL) with row-level security — each user can only access their own data</li>
+    <li>OAuth tokens (Google, Notion) are stored server-side only and never exposed to the browser</li>
+    <li>Passwords are hashed with bcrypt before storage — plaintext passwords are never stored</li>
+    <li>Authentication uses short-lived JWTs — tokens expire and cannot be reused after logout</li>
+  </ul>
+
   <h2>Permissions used</h2>
   <ul>
     <li><strong>storage</strong> — stores your login token and settings locally in Chrome</li>
     <li><strong>identity</strong> — used for Google Calendar OAuth</li>
     <li><strong>notifications</strong> — alerts you when a LeetCode submission is accepted</li>
-    <li><strong>alarms</strong> — reserved for future scheduled review reminders</li>
     <li><strong>leetcode.com</strong> — reads submission results to capture solve data</li>
     <li><strong>api.notion.com</strong> — creates and updates problem pages in your Notion workspace</li>
-    <li><strong>googleapis.com</strong> — creates Google Calendar review events</li>
-    <li><strong>engram-ijh1.onrender.com</strong> — communicates with Engram's backend for authentication and data storage</li>
+    <li><strong>googleapis.com</strong> — creates Google Calendar review events and reads calendar timezone</li>
+    <li><strong>engram.shubhamlakhera.dev</strong> — communicates with Engram's backend for authentication and data storage</li>
   </ul>
 
   <h2>Data deletion</h2>
-  <p>You can delete your data by contacting us. Uninstalling the extension removes all locally stored data automatically.</p>
+  <p>You can request deletion of all your data by contacting us at the email below. Uninstalling the extension removes all locally stored data automatically.</p>
 
   <h2>Changes to this policy</h2>
   <p>If data practices change, this document will be updated with a new "Last updated" date.</p>
